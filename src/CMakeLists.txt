@@ -15,6 +15,13 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 
+install(TARGETS ${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(DIRECTORY include/${PROJECT_NAME}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
 
 
 add_executable(PMX_record_data
@@ -26,6 +33,9 @@ target_link_libraries(PMX_record_data
         ${PROJECT_NAME}
         real_time_tools::real_time_tools
 )
+
+
+
 
 
 

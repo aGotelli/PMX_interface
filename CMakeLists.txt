@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(PMX_interface)
+project(PMX_interface VERSION 2.0)
 set (CMAKE_CXX_STANDARD 20)
 
 #Important CMAKE stuff
@@ -34,3 +34,9 @@ add_subdirectory(src)
 #if(benchmark_FOUND)
     #add_subdirectory(benchmarks)
 #endif(benchmark_FOUND)
+
+
+
+
+#   Install the library using the default routine
+include(cmake/installation_module.cmake)

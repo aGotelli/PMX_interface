@@ -75,6 +75,9 @@ struct PMXInterface{
 
         unsigned int buffer_size = sensor_output_dimension*m_number_of_sensors;
 
+
+        buffer_size = 124;
+
         return buffer_size;
     }() };
 
