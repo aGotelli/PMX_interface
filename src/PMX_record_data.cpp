@@ -41,7 +41,7 @@ int main() {
     sigaction(SIGINT, &sigIntHandler, NULL);
     *StopDemos = false;
 
-    unsigned int number_of_sensors = 2;
+    unsigned int number_of_sensors = 4;
     PMXInterface PMX_interface(number_of_sensors,
                                start_recording,
                                StopDemos);
@@ -77,6 +77,9 @@ int main() {
 
 
     PMX_interface.getSamplesData(PMX_node, PMX_data);
+
+
+    writeToFile("PMX_data", PMX_data, "data/prove/");
 
 
 

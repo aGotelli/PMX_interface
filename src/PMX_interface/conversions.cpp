@@ -1,80 +1,149 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-
+//#include <pthread.h>
+#include <cstdlib>
+#include <deque>
 #include <iostream>
+#include <thread>
+#include <boost/asio.hpp>
 
-//TCPClient_main hostname portnumber
-int main(int argc, char** argv){
+#include <thread>
+#include <chrono>
+using namespace std::chrono_literals;
 
-    int sockfd, newsockfd, portnum;
-    double statsdata[100];
-    socklen_t clilen;
-    struct sockaddr_in serv_addr, cli_addr; //server and client address
 
-//    printf("Port is:%s\n", argv[1]);
+std::vector<char> vBuffer(20*1024);
 
-    //port used to communicate with server
-    portnum = 5005;
 
-    //create IP domain socket
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        fprintf(stderr,"Error creating the socket.\n");
+
+void grabData(boost::asio::ip::tcp::socket &t_socket)
+{
+    t_socket.async_read_some(boost::asio::buffer(vBuffer.data(), vBuffer.size()),
+                             [&](std::error_code ec, std::size_t length){
+                                 if(!ec){
+                                     std::cout << "\n\nRead " << length << " bytes\n\n";
+
+                                     for(int i=0; i<length; i++)
+                                         std::cout << vBuffer[i];
+
+                                     grabData(t_socket);
+
+                                 }
+                             });
+}
+
+
+std::string sendCommand(std::string t_command, boost::asio::ip::tcp::socket &t_socket)
+{
+
+//    std::cout << "sending : " << t_command << "     received : ";
+    boost::asio::write(t_socket,
+                       boost::asio::buffer(t_command.data(),
+                                           sizeof(t_command)));
+
+    std::string response;
+    response.resize(256);
+    boost::system::error_code ec;
+    boost::asio::read(
+        t_socket,
+        boost::asio::buffer(response),
+        boost::asio::transfer_at_least(1),
+        ec
+        );
+
+//    std::cout << t_command << std::endl;
+
+    return response;
+
+}
+
+
+int main(int argc, char* argv[])
+{
+
+    std::string ip_address = "192.172.1.2";
+    std::string port = "55000";
+    boost::asio::io_context io_context;
+    boost::asio::ip::tcp::resolver resolver(io_context);
+    boost::asio::ip::tcp::socket socket(io_context);
+    //                std::cout << "[FBGS] Get endpoints... \n";
+    boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(ip_address, port);
+
+    boost::asio::ip::tcp::endpoint ep = *endpoints;
+
+    std::cout << "Establishing connection to " << ep << "... \n";
+
+    //Connect to socket and open connection
+    boost::asio::connect(socket, endpoints);
+
+    std::cout << "\n\n\n            Connected!\n\n\n" << std::endl << std::endl;
+
+
+    std::vector<std::string> commands_list = {
+        "idn?\n",
+        "pcs?\n",
+        "pcs1\n",
+        "sps?\n",
+        "sps1\n",
+        "mrg0\n",
+        "pcs1\n",
+        "sms1\n",
+        "tsv-1\n",
+        "tsv?\n",
+        "rmb?1,6409,0"
+    };
+
+//    for(const auto &command : commands_list){
+//        auto response = sendCommand(command, socket);
+//        std::cout << command << response << std::endl;
+//        std::this_thread::sleep_for(1s);
+//    }
+
+    auto response = sendCommand("pcs?\n", socket);
+    std::cout << "pcs?\n" << response << std::endl;
+
+    response = sendCommand("pcs1\n", socket);
+    std::cout << "pcs1\n" << response << std::endl;
+
+    response = sendCommand("sps?\n", socket);
+    std::cout << "sps?\n" << response << std::endl;
+
+    response = sendCommand("sps1\n", socket);
+    std::cout << "sps1\n" << response << std::endl;
+
+//    response = sendCommand("mrg0\n", socket);
+//    std::cout << "mrg0\n" << response << std::endl;
+
+//    response = sendCommand("pcs1\n", socket);
+//    std::cout << "pcs1\n" << response << std::endl;
+
+//    response = sendCommand("sms1\n", socket);
+//    std::cout << "sms1\n" << response << std::endl;
+
+    response = sendCommand("tsv1\n", socket);
+    std::cout << "tsv1\n" << response << std::endl;
+
+
+    response = sendCommand("tsv?\n", socket);
+    std::cout << "tsv?\n" << response << std::endl;
+
+
+    while(true){
+
+
+        response = sendCommand("rmb?1,6409,0\n", socket);
+        std::cout << "rmb?1,6409,0\n" << response << std::endl;
+
+        std::string data(response.begin()+2, response.end());
+
+        float f[2];
+
+        memcpy(&f, response.data() + 2, 8);
+
+        std::cout << "f1 : " << f[0] << " f2 : " << f[1] << std::endl;
+
+
+        std::this_thread::sleep_for(1ms);
+
     }
-
-    //make sure serv_addr is cleared and then set values for each member
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(portnum);
-//    serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_addr.s_addr = inet_addr("192.168.1.15");
-
-    int binderror = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
-    if (binderror < 0)
-        fprintf(stderr, "Error Binding.\n");
-
-    //initiate connect to server address(struct sockaddr *) &serv_addr on socket
-    listen(sockfd,1);
-
-    clilen = sizeof(cli_addr);
-
-    int messagelength = 0;
-    bool stop = false;
-
-    newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-
-    while(!stop) {
-
-        if ((read(newsockfd, &messagelength, sizeof(messagelength))) < 0) {
-            fprintf(stderr,"Error reading data from socket.\n");
-            stop = true;
-        }
-
-        if ((read(newsockfd, &statsdata, sizeof(statsdata))) < 0)
-            fprintf(stderr,"Error reading data from socket.\n");
-
-        std::cout << statsdata << std::endl;
-
-        usleep(100000);
-    }
-
-
-    /*
-    while (count < 50){
-    //populate statistics data to send to server
-    for(int i=0; i<100; i++) {
-        statsdata[i] = rand();
-    }
-    */
-    close(newsockfd);
-    close(sockfd);
-
     return 0;
 }
+

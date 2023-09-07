@@ -28,6 +28,10 @@ find_package(yaml-cpp REQUIRED)
 find_package(mpi_cmake_modules REQUIRED)
 find_package(real_time_tools REQUIRED)
 
+
+find_package(Boost REQUIRED COMPONENTS system thread date_time regex serialization)
+
+
 add_subdirectory(src)
 
 

@@ -67,14 +67,17 @@ PMXInterface::~PMXInterface()
     // Close the server socket
     close(serverSocket);
 
-    thread.join();
+//    thread.join();
+
+    m_future.get();
 
 }
 
 
 void PMXInterface::startRecordingLoop()
 {
-    thread = std::thread([this](){recordingLoop();});
+//    thread = std::thread([this](){recordingLoop();});
+    m_future = std::future<void>(std::async(std::launch::async, [this](){recordingLoop();}));
 }
 
 

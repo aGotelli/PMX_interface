@@ -20,12 +20,14 @@
 
 #include <mutex>
 #include <thread>
-
+#include <future>
 
 
 #include <Eigen/Dense>
 #include <deque>
 #include <yaml-cpp/yaml.h>
+
+
 
 
 
@@ -91,6 +93,7 @@ struct PMXInterface{
 
 
     std::thread thread;
+    std::future<void> m_future;
 
 
     std::chrono::high_resolution_clock::time_point m_start;
