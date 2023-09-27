@@ -20,14 +20,12 @@
 
 #include <mutex>
 #include <thread>
-#include <future>
+
 
 
 #include <Eigen/Dense>
 #include <deque>
 #include <yaml-cpp/yaml.h>
-
-
 
 
 
@@ -47,9 +45,11 @@ struct Sample {
 
 struct PMXInterface{
 
+
+
     PMXInterface(const unsigned int t_number_of_sensors,
-                std::shared_ptr<bool> t_start_recording,
-                std::shared_ptr<bool> t_StopDemos);
+                 std::shared_ptr<bool> t_start_recording,
+                 std::shared_ptr<bool> t_StopDemos);
 
     ~PMXInterface();
 
@@ -63,9 +63,9 @@ struct PMXInterface{
 
 
 
-    std::string m_tcp_ip_address { std::string("192.168.1.15") };
-    unsigned int m_tcp_ip_port { 5005 };
-
+    std::string TCP_IP { std::string("192.168.1.15") };
+    unsigned int TCP_PORT { 5005 };
+    unsigned int BUFFER_SIZE { 128 };
 
     unsigned int m_number_of_sensors { 0 };
     unsigned int m_sensor_message_size { 2 };
@@ -76,9 +76,6 @@ struct PMXInterface{
         const unsigned int sensor_output_dimension = 2*size_double;
 
         unsigned int buffer_size = sensor_output_dimension*m_number_of_sensors;
-
-
-        buffer_size = 124;
 
         return buffer_size;
     }() };
@@ -93,7 +90,6 @@ struct PMXInterface{
 
 
     std::thread thread;
-    std::future<void> m_future;
 
 
     std::chrono::high_resolution_clock::time_point m_start;
